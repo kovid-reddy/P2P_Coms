@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Basic P2P</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <h2>P2P Chat</h2>
+    <div class="input-row">
+      <button onclick="startConnection()" id="connectBtn">Connect to Peer</button>
+    </div>
+    <textarea id="chat" readonly></textarea>
+
+    <div class="input-row">
+      <input type="text" id="message" placeholder="Type message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="file-section">
+      <input type="file" id="fileInput" />
+      <div class="button-row">
+        <button onclick="sendFile()">Send File</button>
+        <button onclick="cancelTransfer()" id="cancelBtn" style="display:none;">Cancel</button>
+      </div>
+      <div id="progressContainer" style="display:none;">
+        <div class="progress-item">
+          <span>Hashing: </span><span id="hashPercent">0</span>%
+          <progress id="hashProgress" value="0" max="100"></progress>
+        </div>
+        <div class="progress-item">
+          <span>Transfer: </span><span id="transferPercent">0</span>%
+          <progress id="transferProgress" value="0" max="100"></progress>
+        </div>
+      </div>
+    </div>
+
+    <div id="incomingFileBox" style="display:none;">
+      <span id="incomingFileName"></span>
+      <button onclick="acceptFile()">Accept</button>
+      <button onclick="rejectFile()">Reject</button>
+    </div>
+
+    <div class="status" id="status">Not connected</div>
+  </div>
+
+</body>
+
+</html>
