@@ -1,0 +1,13 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "p2p-signaling"
+resolve_s3 = true
+s3_prefix = "p2p-signaling"
+region = "ap-south-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "AllowedOrigins=\"https://d1id3fnpj3tfq0.cloudfront.net\""
+
+[default.global.parameters]
+region = "ap-south-1"

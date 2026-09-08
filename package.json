@@ -4,14 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "test": "node --test p2p-basic/aws-signaling/app.test.js p2p-basic/client/js/core/state.test.js p2p-basic/client/js/transfer/chunkSizing.test.js",
+    "start": "node p2p-basic/server/server.js",
+    "sam:validate": "sam validate --template infrastructure/template.yaml",
+    "sam:build": "sam build --template-file infrastructure/template.yaml",
+    "sam:deploy": "sam build --template-file infrastructure/template.yaml && sam deploy --guided"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.901.0",
+    "@aws-sdk/client-dynamodb": "^3.901.0",
     "ws": "^8.19.0"
   },
   "devDependencies": {

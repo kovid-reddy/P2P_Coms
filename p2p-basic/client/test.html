@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2EE Cryptographic Unit Tests — Step 6</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 { color: #38bdf8; font-size: 1.5rem; }
+        .test-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #64748b;
+        }
+        .test-card.pass { border-left-color: #10b981; }
+        .test-card.fail { border-left-color: #ef4444; }
+        .badge {
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .badge.pass { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge.fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .summary {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 16px;
+            background: #1e293b;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Step 6 — E2EE Cryptographic Unit Test Suite</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="testList"></div>
+
+    <script type="module">
+        import { runCryptoTests } from "./js/tests/cryptoTests.js";
+
+        async function run() {
+            const { total, passed, failed, results } = await runCryptoTests();
+            const summaryEl = document.getElementById("summary");
+            const listEl = document.getElementById("testList");
+
+            summaryEl.innerHTML = `Tests Completed: ${passed} / ${total} Passed (${failed} Failed)`;
+            summaryEl.style.color = failed === 0 ? "#34d399" : "#f87171";
+
+            listEl.innerHTML = results.map(r => `
+                <div class="test-card ${r.status.toLowerCase()}">
+                    <span>${r.name} ${r.error ? `<br><small style="color:#f87171">${r.error}</small>` : ''}</span>
+                    <span class="badge ${r.status.toLowerCase()}">${r.status}</span>
+                </div>
+            `).join('');
+        }
+
+        run();
+    </script>
+</body>
+</html>

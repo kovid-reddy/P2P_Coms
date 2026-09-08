@@ -1,52 +1,167 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-  <title>Basic P2P</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>P2P Beam — Secure Peer-to-Peer Chat & File Transfer</title>
   <link rel="stylesheet" href="style.css">
-  <script src="app.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  <script src="./runtime-config.js"></script>
+  <script type="module" src="./js/app.js"></script>
 </head>
-
 <body>
-  <div class="container">
-    <h2>P2P Chat</h2>
-    <div class="input-row">
-      <button onclick="startConnection()" id="connectBtn">Connect to Peer</button>
-    </div>
-    <textarea id="chat" readonly></textarea>
-
-    <div class="input-row">
-      <input type="text" id="message" placeholder="Type message..." />
-      <button onclick="sendMessage()">Send</button>
-    </div>
-
-    <div class="file-section">
-      <input type="file" id="fileInput" />
-      <div class="button-row">
-        <button onclick="sendFile()">Send File</button>
-        <button onclick="cancelTransfer()" id="cancelBtn" style="display:none;">Cancel</button>
-      </div>
-      <div id="progressContainer" style="display:none;">
-        <div class="progress-item">
-          <span>Hashing: </span><span id="hashPercent">0</span>%
-          <progress id="hashProgress" value="0" max="100"></progress>
+  <div class="app-layout">
+    <!-- Top Application Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <button id="mobileMenuBtn" class="icon-btn mobile-menu-btn" aria-label="Toggle Peers Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="brand-icon"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          <span class="brand-title">P2P Beam</span>
         </div>
-        <div class="progress-item">
-          <span>Transfer: </span><span id="transferPercent">0</span>%
-          <progress id="transferProgress" value="0" max="100"></progress>
+        <div class="signaling-badge" id="signalingStatusBadge">
+          <span class="status-dot dot-connecting" id="signalingDot"></span>
+          <span id="signalingStatusText">Signaling: Connecting...</span>
         </div>
       </div>
-    </div>
 
-    <div id="incomingFileBox" style="display:none;">
-      <span id="incomingFileName"></span>
-      <button onclick="acceptFile()">Accept</button>
-      <button onclick="rejectFile()">Reject</button>
-    </div>
+      <div class="header-identity">
+        <div class="identity-card" id="identityCard" title="Click to copy your Peer ID">
+          <span class="identity-label">My ID:</span>
+          <code class="identity-id" id="localPeerIdDisplay">Generating...</code>
+          <button id="copyIdBtn" class="copy-btn" aria-label="Copy Local Peer ID" title="Copy Peer ID">
+            <svg class="copy-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span class="copy-tooltip" id="copyTooltip">Copy</span>
+          </button>
+        </div>
+      </div>
+    </header>
 
-    <div class="status" id="status">Not connected</div>
+    <!-- Main Workspace: Sidebar + Conversation Area -->
+    <div class="app-main">
+      <!-- Backdrop for mobile drawer -->
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+      <!-- Left Sidebar: Discovered Peers -->
+      <aside class="peers-sidebar" id="peersSidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-row">
+            <h3 class="sidebar-title">Discovered Peers</h3>
+            <span class="peer-count-badge" id="peerCountBadge">0</span>
+          </div>
+        </div>
+
+        <div class="peers-scroll-container">
+          <div id="peerList" class="peer-list">
+            <!-- Peer items dynamically rendered here -->
+          </div>
+          <div id="noPeersPrompt" class="empty-peers-notice">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            <p>No peers discovered yet</p>
+            <span class="empty-subtext">Open another browser window or share your Peer ID to connect.</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Area: Conversation & File Transfers -->
+      <main class="conversation-panel" id="conversationPanel">
+        <!-- Conversation Header -->
+        <div class="chat-header">
+          <div class="active-peer-meta">
+            <div class="active-peer-avatar" id="activePeerAvatar">
+              <span id="activePeerInitial">?</span>
+            </div>
+            <div class="active-peer-info">
+              <h4 id="activePeerTitle">No peer selected</h4>
+              <div class="peer-conn-status">
+                <span class="status-dot dot-offline" id="activePeerDot"></span>
+                <span id="status">Not connected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages Flow -->
+        <div class="messages-flow-container" id="messagesContainer">
+          <div id="chatMessages" class="chat-bubbles-list">
+            <!-- Message bubbles rendered dynamically here -->
+          </div>
+          <div id="emptyChatNotice" class="empty-chat-placeholder">
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-chat-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <h3>Select a peer to start chatting</h3>
+            <p>Direct WebRTC DataChannel connection with end-to-end ECDSA cryptographic signatures.</p>
+          </div>
+        </div>
+
+        <!-- File Transfer Tray (Incoming requests, Progress, Stats) -->
+        <div class="transfer-tray" id="transferTray">
+          <!-- Incoming File Request Card -->
+          <div id="incomingFileBox" class="transfer-card incoming-card" style="display:none;">
+            <div class="card-icon-col">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="file-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </div>
+            <div class="card-body-col">
+              <div class="card-header-row">
+                <span class="card-badge badge-incoming">Incoming File Request</span>
+              </div>
+              <h5 class="file-name-text" id="incomingFileName">File Name</h5>
+              <div class="card-actions-row">
+                <button id="acceptFileBtn" class="btn btn-accept">Accept & Save to Disk</button>
+                <button id="rejectFileBtn" class="btn btn-reject">Decline</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Transfer Card (Progress, Speed, ETA, Cancel) -->
+          <div id="progressContainer" class="transfer-card active-card" style="display:none;">
+            <div class="card-icon-col">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="file-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="12 18 12 12 16 14"/></svg>
+            </div>
+            <div class="card-body-col">
+              <div class="card-header-row">
+                <span class="card-badge badge-active" id="transferDirectionBadge">File Transfer</span>
+                <span class="transfer-percent-text"><span id="transferPercent">0</span>%</span>
+              </div>
+              <div class="transfer-file-title" id="transferFileTitle">Transferring...</div>
+              <div class="custom-progress-wrapper">
+                <progress id="transferProgress" value="0" max="100" class="custom-progress-bar"></progress>
+              </div>
+              <div class="transfer-metrics-row">
+                <span id="transferSpeedMetric" class="metric-item">0 KB/s</span>
+                <span id="transferEtaMetric" class="metric-item">ETA: --</span>
+                <button id="cancelBtn" class="btn btn-cancel-sm" style="display:none;">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message Composer Area -->
+        <div class="composer-container">
+          <input type="file" id="fileInput" class="hidden-file-input" />
+          <button id="attachFileBtn" class="icon-btn attach-btn" title="Attach & send a file" aria-label="Attach File">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          
+          <textarea id="message" class="message-composer-input" placeholder="Type a message... (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
+
+          <button id="sendMessageBtn" class="btn btn-send" aria-label="Send Message">
+            <span>Send</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="send-icon"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+
+        <!-- Drag & Drop Overlay -->
+        <div id="dragDropOverlay" class="drag-drop-overlay">
+          <div class="drop-modal">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="drop-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <h3>Drop file to send</h3>
+            <p>File will stream directly to the connected peer in 256KB verified chunks</p>
+          </div>
+        </div>
+      </main>
+    </div>
   </div>
-
 </body>
-
 </html>
